@@ -1,0 +1,344 @@
+<!doctype html>
+
+<!-- REFERENCES 
+api/overview - http://backbonejs.org/
+model/collection/view overviews - http://backbonetutorials.com/
+general questions - stackoverflow
+router example - http://aaronhardy.com/javascript/javascript-architecture-backbone-js-routers/
+design ideas - codepen.io
+file structure - https://github.com/VIISON/BackboneSwitchView
+jquery reference - http://api.jquery.com/
+-->
+
+<link href='css/catalog.css' rel='stylesheet' type='text/css'>
+<link href='http://fonts.googleapis.com/css?family=Alegreya+Sans' rel='stylesheet' type='text/css'>
+<link href='http://fonts.googleapis.com/css?family=Forum' rel='stylesheet' type='text/css'>
+
+<section>
+
+	<!-- Product List -->
+	<div id='catalog' class='hidden'>
+		<header>Product Catalog</header>
+		<div id="products-list">
+      <!-- empty product list to start -->
+
+      <!-- *** create one default node for testing/demo purposes -->
+      <!--<div id="prod-1" class="product_node">
+        <span class="name">One can of spam</span>
+        <span class="value">47</span>
+        <span class="description">One can of vintage 1987 spam.  Spam is easy to store, indestructible and tasty.  Spam is great with wine and is perfect for children's parties since it goes well with cake.</span>
+        <span class="height">3</span>
+        <span class="width">1</span>
+        <span class="length">4</span><span class="weight">.5</span>
+        <img id='edit-1' class='icon edit-icon' src="images/edit.png">
+        <img id='delete-1' class='icon delete-icon' src="images/delete2.png">
+      </div>-->      
+		</div>
+		<a id="add_product_form" class='button' href='#product'>Add Product</a>
+	</div>
+	
+	<!-- Add Product Form -->
+	<div id='product' class='hidden'>
+		<form id='product_form'>
+			<header class='form_header'>Add Product to Catalog</header>
+			<div class='field'><span class='label'>Name</span><input id='name' type='text' autofocus /></div>
+			<div class='field'><span class='label'>Description</span><input id='description' type='text' /></div>
+			<div class='field'><span class='label'>Height</span><input id='height' type='text' placeholder='(inches)' /></div>
+			<div class='field'><span class='label'>Width</span><input id='width' type='text' placeholder='(inches)' /></div>
+			<div class='field'><span class='label'>Length</span><input id='length' type='text' placeholder='(inches)' /></div>
+			<div class='field'><span class='label'>Weight</span><input id='weight' type='text' placeholder='(pounds)' /></div>
+			<div class='field'><span class='label'>Value</span><input id='value' type='text' placeholder='(dollars)' /></div>
+			<input id='prod_id' type='hidden' value='' />
+      <a id='add_new_product' class='button' href='#catalog'>Add</a>
+      <a id='edit_product' class='button' href='#catalog'>Submit</a>
+
+		</form>
+	</div>
+
+	<!-- Product ID counter (never displayed) --> 
+	<div id='product_counter' class='hidden'>1</div>
+
+</section>
+
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
+<script type="text/javascript" src="http://ajax.cdnjs.com/ajax/libs/underscore.js/1.1.4/underscore-min.js"></script>
+<script type="text/javascript" src="http://ajax.cdnjs.com/ajax/libs/backbone.js/0.3.3/backbone-min.js"></script>
+
+<!-- 
+Should investigate upgrading to one of the latest backbone/underscore lib version...
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/backbone.js/1.0.0/backbone.js"></script>  
+
+<script src="http://ajax.cdnjs.com/ajax/libs/underscore.js/1.1.6/underscore-min.js"></script>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.1.0/backbone-min.js"></script>
+-->
+
+
+<script type="text/javascript">
+(function ($) {
+  //localStorage.clear();   // debug
+	var product_elements = new Array("id", "name", "value", "description", "height", "width", "length", "weight");
+
+  var AppRouter = Backbone.Controller.extend({  // note: Controller needs to update to Router (w/1.0.0+ version of backbone)
+    currentView: "",
+
+    // unused at the moment
+    //initialize: function(el) {},
+
+    routes: {
+      "": "showCatalog",
+      "catalog": "showCatalog",
+      "product": "addProduct",
+      "product/:id": "editProduct"
+    },
+
+    // hides the previous view and shows the requested one
+    setActiveView: function(view, id) {
+      if(this.currentView) {
+        $("#" + this.currentView).addClass('hidden');
+      }
+      console.log("#" + view);
+      $("#" + view).removeClass('hidden'); 
+      this.currentView = view;    
+    },
+
+    // set views
+    showCatalog: function() { 
+      this.setActiveView('catalog', null);
+    },
+    addProduct: function() { 
+      this.setActiveView('product', null);
+    },
+    editProduct: function(id) { 
+      this.setActiveView('product', id);
+    },    
+  });
+
+  //Create a model to hold product atributes
+	Product = Backbone.Model.extend({
+		url: 'products',
+		urlRoot: 'products',
+		defaults: {
+      id: '',
+			name: '',
+			description: '',
+			width: '',
+			length: '',
+			height: '',
+			weight: '',
+			value: ''
+		}
+	});
+  
+  // create a collection and add basic event listeners
+  Products = Backbone.Collection.extend({
+    initialize: function (models, options) {
+      this.bind("add", options.view.addProductNode);
+      this.bind("change", options.view.editProductNode);
+      this.bind('remove', options.view.removeProductNode);
+    }
+  });
+  
+  CatalogView = Backbone.View.extend({
+    el: $("body section"),
+    
+    // when creating the view, retrieve any existing products from local storage
+    initialize: function () {
+      this.products = new Products( null, { view: this });
+      var full_product_list = "";
+      for(i = 0; i <= localStorage.length - 1; i++) {   
+        key = localStorage.key(i);  
+        val = localStorage.getItem(key); 
+        
+        product = new Product(JSON.parse(val));
+        this.products.add(product);
+      }    
+    },
+
+    // add all view event listeners
+    events: {
+      "click #add_new_product":  "addProduct",
+      "click #edit_product":  "editProduct",
+      "click #add_product_form":  "addProductForm",
+      "click .edit-icon":  "editProductForm",
+      "click .delete-icon":  "deleteProduct",
+    },
+
+    // show the 'add product' form
+    addProductForm: function () {
+    	console.log("addProductForm");
+      this.clearForm();
+      $('.product_form header').text('Add Product to Catalog');
+      $('#add_new_product').removeClass('hidden');
+      $('#edit_product').addClass('hidden');
+      $('#prod_id').val('');
+    },
+
+    // show the 'edit product' form
+    editProductForm: function () {
+    	console.log("editProductForm");
+      this.clearForm();
+      // get the id from the event 
+  		var splitStr = event.target.id.split("-");
+  		var productID = splitStr[1];
+
+      $('.product_form header').text('Edit Product #' + productID);
+      $('#add_new_product').addClass('hidden');
+      $('#edit_product').removeClass('hidden');
+      $('#prod_id').val(productID);
+
+      // get the entry from local storage and parse a product
+      var localStorageKey = this.findLocalStorageKey(productID);
+      var lsString = localStorage.getItem(localStorageKey);
+      product = new Product(JSON.parse(localStorage.getItem(localStorageKey)));
+
+      // set form values for the product
+      $("#product #name").val(product.get("name")),
+      $("#product #description").val(product.get("description")),
+      $("#product #height").val(product.get("height")),
+      $("#product #width").val(product.get("width")),
+      $("#product #length").val(product.get("length")),
+      $("#product #weight").val(product.get("weight")),
+      $("#product #value").val(product.get("value")),      
+
+  		console.log("productID = " + productID);
+    },
+
+    // add a new product to the collection
+    addProduct: function () {
+
+      var product_counter = 1 + localStorage.length;
+
+      // grab the product's details from the form
+      var product_details = {
+        id: product_counter,
+      	name: $("#product #name").attr('value'),
+      	description: $("#product #description").attr('value'),
+      	height: $("#product #height").attr('value'),
+      	width: $("#product #width").attr('value'),
+      	length: $("#product #length").attr('value'),
+      	weight: $("#product #weight").attr('value'),
+      	value: $("#product #value").attr('value'),
+      };      
+
+      // add the new product
+      var product_model = new Product(product_details);
+      localStorage.setItem(product_counter, JSON.stringify(product_details));
+      this.products.add( product_model ); 
+    },
+
+    // edit an existing prodcut
+    editProduct: function () {     
+
+      var productID = $('#prod_id').val();
+
+      // grab the product's details from the form
+      // TODO: create a reusable function for this (to merge with add)
+      var product_details = {
+        id: productID,
+        name: $("#product #name").attr('value'),
+        description: $("#product #description").attr('value'),
+        height: $("#product #height").attr('value'),
+        width: $("#product #width").attr('value'),
+        length: $("#product #length").attr('value'),
+        weight: $("#product #weight").attr('value'),
+        value: $("#product #value").attr('value'),
+      };      
+
+      // set the new values in local storage
+      var localStorageKey = this.findLocalStorageKey(productID);
+      localStorage.setItem(localStorageKey, JSON.stringify(product_details));
+      var product = this.products.get(productID);
+      product.set(product_details);
+    }, 
+
+    // add a node to a the product catalog (collection)
+    addProductNode: function (model) {
+    	// Get the product ID
+    	var product_counter = model.id;
+
+      // Generate the markup for a product node
+      var product_markup = "<div id='prod-" + product_counter + "' class='product_node'>";
+      
+      // Iterate through each of the product's elements and create a simple span for each
+      for(var x in product_elements) {
+      	product_markup += "<span class='prod_element " + product_elements[x] + "'>" + model.get(product_elements[x]) + "</span>";
+      }
+      product_markup += "<a href='#product/" + product_counter + "'><img id='edit-" + product_counter + "' class='icon edit-icon' src='images/edit.png' /></a><img id='delete-" + product_counter + "'class='icon delete-icon' src='images/delete2.png' /></div>";
+
+      // append the product node to the list 
+      $("#products-list").append(product_markup);
+    },
+
+    // edit an existing product node with new values
+    editProductNode: function (model) {
+      // Get the product ID
+      var product_counter = model.id;
+
+      // Generate the markup for a product node
+      // TODO: this node creation should be extracted to a reusable function for add and edit
+      var product_markup = "<div id='prod-" + product_counter + "' class='product_node'>";
+      
+      // Iterate through each of the product's elements and create a simple span for each
+      for(var x in product_elements) {
+        product_markup += "<span class='prod_element " + product_elements[x] + "'>" + model.get(product_elements[x]) + "</span>";
+      }
+      product_markup += "<a href='#product/" + product_counter + "'><img id='edit-" + product_counter + "' class='icon edit-icon' src='images/edit.png' /></a><img id='delete-" + product_counter + "'class='icon delete-icon' src='images/delete2.png' /></div>";
+
+      // relace the node's data
+      $("#products-list #prod-" + product_counter).replaceWith(product_markup);
+    },
+    
+    // remove an existing node
+    removeProductNode: function (model) {
+      $('#prod-' + model.id).remove();
+    },
+
+    //////////////////////// UTIL FUNCTIONS ////////////////////////
+    // clear out the existing form values (temporary, only cause we are reusing it and not submitting)
+    clearForm: function () {
+      for(var x in product_elements) {
+        $("#product #" + product_elements[x]).val('');
+      }
+    },
+
+    // find the correct key in local storage for a product ID
+    findLocalStorageKey: function (productID) {
+      // iterate through each entry and find the right ID 
+      // (this has to be horribly inefficient to iterate through everything, needs to be refactored)
+      for (var key in localStorage) {
+        val = localStorage.getItem(key); 
+
+        product = new Product(JSON.parse(val));
+        console.log(product.id + " :: " + key + " :: " + productID);
+        if(product.id == productID) {
+          return key;
+        }
+      }
+      // return null if no key was found
+      console.log("ERROR: the product was not found in the database");
+      return null;
+    },
+
+    // generate the markup for a new or edited product node 
+    // TODO: this isn't currently being used, need to fix and impelemnt for both add and edit
+    generateProductMarkup: function (product_counter) {
+      // Generate the markup for a product node
+      var product_markup = "<div id='prod-" + product_counter + "' class='product_node'>";
+      // Iterate through each of the product's elements and create a simple span for each
+      for(var x in product_elements) {
+        product_markup += "<span class='prod_element " + product_elements[x] + "'>" + model.get(product_elements[x]) + "</span>";
+      }
+      product_markup += "<a href='#product/" + product_counter + "'><img id='edit-" + product_counter + "' class='icon edit-icon' src='images/edit.png' /></a><img id='delete-" + product_counter + "'class='icon delete-icon' src='images/delete2.png' /></div>"; 
+      return product_markup;     
+    },
+
+  });
+
+  var appRouter = new AppRouter();
+  Backbone.history.start();
+  
+  var catalogView = new CatalogView;
+})(jQuery);
+
+</script>

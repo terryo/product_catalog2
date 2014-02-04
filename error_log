@@ -1,0 +1,3 @@
+[25-Jan-2014 18:09:17 UTC] PHP Fatal error:  Call to undefined function print_header() in /home/terryjnr/public_html/projects/product_catalog/index.php on line 3
+[25-Jan-2014 18:09:29 UTC] PHP Fatal error:  Call to undefined function print_header() in /home/terryjnr/public_html/projects/product_catalog/index.php on line 3
+[25-Jan-2014 18:10:06 UTC] PHP Fatal error:  Call to undefined function print_header() in /home/terryjnr/public_html/projects/product_catalog/index.php on line 3
