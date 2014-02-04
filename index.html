@@ -252,6 +252,26 @@ Should investigate upgrading to one of the latest backbone/underscore lib versio
       product.set(product_details);
     }, 
 
+    // delete a product from the collection
+    deleteProduct: function () {
+
+      // get the id from the event 
+      var splitStr = event.target.id.split("-");
+      var productID = splitStr[1];
+
+      if(confirm("Are you sure you want to DELETE this product from the Product Catalog?")) {
+        // get the Product based on the ID on the page
+        var productToDelete = this.products.get(productID);
+
+        this.products.remove(productToDelete);
+        productToDelete.destroy();
+
+        // delete from local storage 
+        var localStorageKey = this.findLocalStorageKey(productID);
+        localStorage.removeItem(key);
+      }
+    },
+
     // add a node to a the product catalog (collection)
     addProductNode: function (model) {
     	// Get the product ID
