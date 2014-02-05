@@ -11,17 +11,6 @@
     <ul id="products-list">
       <!-- empty product list to start -->
 
-      <!-- *** create one default node for testing/demo purposes -->
-      <!--<div id="prod-1" class="product_node">
-        <span class="name">One can of spam</span>
-        <span class="value">47</span>
-        <span class="description">One can of vintage 1987 spam.  Spam is easy to store, indestructible and tasty.  Spam is great with wine and is perfect for children's parties since it goes well with cake.</span>
-        <span class="height">3</span>
-        <span class="width">1</span>
-        <span class="length">4</span><span class="weight">.5</span>
-        <img id='edit-1' class='icon edit-icon' src="images/edit.png">
-        <img id='delete-1' class='icon delete-icon' src="images/delete2.png">
-      </div>-->      
     </ul>
     <a id="add_product_form" class='button' href='#product'>Add Product</a>
   </div>
@@ -136,13 +125,19 @@ Should investigate upgrading to one of the latest backbone/underscore lib versio
     initialize: function () {
       this.products = new Products( null, { view: this });
       // iterate through each local storage entry, create a product and add to the collection
-      for(i = 0; i <= localStorage.length - 1; i++) {   
-        key = localStorage.key(i);  
-        val = localStorage.getItem(key); 
-        
-        product = new Product(JSON.parse(val));
-        this.products.add(product);
+      if(localStorage.length) {
+        for(i = 0; i <= localStorage.length - 1; i++) {   
+          key = localStorage.key(i);  
+          val = localStorage.getItem(key); 
+          
+          product = new Product(JSON.parse(val));
+          this.products.add(product);
+        }
       }    
+      else {
+        // if no content in the product catalog, add an initial one
+        this.addDummyProduct();
+      }
     },
 
     // add all view event listeners
@@ -281,7 +276,26 @@ Should investigate upgrading to one of the latest backbone/underscore lib versio
         weight: $("#product #weight").attr('value'),
         value: $("#product #value").attr('value'),
       };   
-    }
+    },
+
+    // create one default node for demo on initial load
+    addDummyProduct: function () {
+      var product_details = {
+        id: 1,
+        name: "One can of spam",
+        description: "One can of vintage 1987 spam.  Spam is easy to store, indestructible and tasty.  Spam is great with wine and is perfect for children's parties since it goes well with cake.",
+        height: "3",
+        width: "1",
+        length: "4",
+        weight: ".5",
+        value:"47",
+      }; 
+
+      var product_model = new Product(product_details);
+      localStorage.setItem(1, JSON.stringify(product_details));
+      this.products.add( product_model );
+
+    },
   });
 
   var appRouter = new AppRouter();
