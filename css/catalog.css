@@ -39,8 +39,9 @@
 #product_form input {
 	width:100%;
 	color: white;
-	padding:8px 5px;
-	background:linear-gradient(#1f2124, #27292c);
+	padding:8px 5px;	
+	/* background: linear-gradient(#1f2124, #27292c); */
+	background: #1f2124;
 	border:1px solid #222;
 	box-shadow:0 1px 0 rgba(255,255,255,0.1);
 	border-radius:0.3em;
