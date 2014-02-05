@@ -54,8 +54,6 @@ Should investigate upgrading to one of the latest backbone/underscore lib versio
 
 <script type="text/javascript">
 (function ($) {
-  //localStorage.clear();   // debug
-  
   var product_elements = new Array("id", "name", "value", "description", "height", "width", "length", "weight");
 
   var AppRouter = Backbone.Controller.extend({  // note: Controller needs to update to Router (w/1.0.0+ version of backbone)
@@ -187,16 +185,16 @@ Should investigate upgrading to one of the latest backbone/underscore lib versio
     // add a new product to the collection
     addProduct: function () {
       // find ID of the last product in the catalog (or set to zero if it is empty)
-      var last_product_key = localStorage.length ? localStorage.key(localStorage.length - 1) : 0; 
-      var next_product_ID = 1 + parseInt(last_product_key);
+      var lastProductKey = localStorage.length ? localStorage.key(localStorage.length - 1) : 0; 
+      var nextProductID = 1 + parseInt(lastProductKey);
 
       // grab the product's details from the form
-      var product_details = this.getProductDetails(next_product_ID);      
+      var productDetails = this.getProductDetails(nextProductID);      
 
       // add the new product
-      var product_model = new Product(product_details);
-      localStorage.setItem(next_product_ID, JSON.stringify(product_details));
-      this.products.add( product_model ); 
+      var productModel = new Product(productDetails);
+      localStorage.setItem(nextProductID, JSON.stringify(productDetails));
+      this.products.add( productModel ); 
     },
 
     // edit an existing prodcut
@@ -204,14 +202,14 @@ Should investigate upgrading to one of the latest backbone/underscore lib versio
       var productID = parseInt($('#prod_id').val());  // note: parsing int so this doesn't convert to string on edit
 
       // grab the product's details from the form
-      var product_details = this.getProductDetails(productID);     
+      var productDetails = this.getProductDetails(productID);     
 
       // set the new values in local storage
-      localStorage.setItem(productID, JSON.stringify(product_details));
+      localStorage.setItem(productID, JSON.stringify(productDetails));
       
       // add new product
       var product = this.products.get(productID);
-      product.set(product_details);
+      product.set(productDetails);
     }, 
 
     // delete a product from the collection
@@ -219,6 +217,11 @@ Should investigate upgrading to one of the latest backbone/underscore lib versio
       // get the id from the event 
       var splitStr = event.target.id.split("-");
       var productID = splitStr[1];
+
+      // temporarily highlight the product that is targetted for deletion (for user reference)
+      $("#prod-" + productID).addClass('delete_highlight');
+
+      // confirm and then delete product
       if(confirm("Are you sure you want to DELETE this product from the Product Catalog?")) {
         // get the Product based on the ID on the page
         var productToDelete = this.products.get(productID);
@@ -227,27 +230,31 @@ Should investigate upgrading to one of the latest backbone/underscore lib versio
         // delete from local storage 
         localStorage.removeItem(productID);
       }
+      else {
+        // if not confirmed, revert delete highlight
+        $("#prod-" + productID).removeClass('delete_highlight');
+      }
     },
 
     // edit an existing product node with new values
     setProductNode: function (model) {
       // Get the product ID
-      var product_id = model.id;
+      var productID = model.id;
 
       // Generate the markup for a product node
-      var product_markup = "<li id='prod-" + product_id + "' class='product_node'>";
+      var productMarkup = "<li id='prod-" + productID + "' class='product_node'>";
       
       // Iterate through each of the product's elements and create a simple span for each
       for(var x in product_elements) {
-        product_markup += "<span class='prod_element " + product_elements[x] + "'>" + model.get(product_elements[x]) + "</span>";
+        productMarkup += "<span class='prod_element " + product_elements[x] + "'>" + model.get(product_elements[x]) + "</span>";
       }
-      product_markup += "<a href='#product/" + product_id + "'><img id='edit-" + product_id + "' class='icon edit-icon' src='images/edit.png' /></a><img id='delete-" + product_id + "'class='icon delete-icon' src='images/delete.png' /></li>";
+      productMarkup += "<a href='#product/" + productID + "'><img id='edit-" + productID + "' class='icon edit-icon' src='images/edit.png' /></a><img id='delete-" + productID + "'class='icon delete-icon' src='images/delete.png' /></li>";
 
       // if the product node exists, replace the node's content, if not, append
-      if($("#products-list #prod-" + product_id).length > 0) {
-        $("#products-list #prod-" + product_id).replaceWith(product_markup);
+      if($("#products-list #prod-" + productID).length > 0) {
+        $("#products-list #prod-" + productID).replaceWith(productMarkup);
       } else {
-        $("#products-list").append(product_markup);
+        $("#products-list").append(productMarkup);
       }
     },
     
@@ -263,7 +270,7 @@ Should investigate upgrading to one of the latest backbone/underscore lib versio
         $("#product #" + product_elements[x]).val('');
       }
     },
-
+ 
     // grab product details from the form
     getProductDetails: function (product_id) {
       return {
@@ -280,7 +287,7 @@ Should investigate upgrading to one of the latest backbone/underscore lib versio
 
     // create one default node for demo on initial load
     addDummyProduct: function () {
-      var product_details = {
+      var productDetails = {
         id: 1,
         name: "One can of spam",
         description: "One can of vintage 1987 spam.  Spam is easy to store, indestructible and tasty.  Spam is great with wine and is perfect for children's parties since it goes well with cake.",
@@ -291,9 +298,9 @@ Should investigate upgrading to one of the latest backbone/underscore lib versio
         value:"47",
       }; 
 
-      var product_model = new Product(product_details);
-      localStorage.setItem(1, JSON.stringify(product_details));
-      this.products.add( product_model );
+      var productModel = new Product(productDetails);
+      localStorage.setItem(1, JSON.stringify(productDetails));
+      this.products.add( productModel );
 
     },
   });

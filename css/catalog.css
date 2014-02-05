@@ -52,9 +52,6 @@
 	float:right;
 }
 
-#product_form input {
- 	background:#27292c;
-}
 
 #product_form .button,
 #catalog .button {
@@ -106,7 +103,6 @@
 	padding: 15px;
 	border-radius:0.4em;
 	margin-top: 15px;
-	box-shadow: 2px 2px 2px #888888;
 	margin-left: -40px;
 }
 
@@ -194,4 +190,8 @@
 	-webkit-transform: scale(1.1);
 	-webkit-transition-timing-function: ease-out;
 	-webkit-transition-duration: 200ms;
+}
+
+#catalog .delete_highlight {
+	background: #640000;
 }
