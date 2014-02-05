@@ -3,7 +3,23 @@ product_catalog2
 
 First version of product catalog posted.  
 
-Current fixes needed...
++++ ASSUMPTIONS
+1 - local storage - keys are always stored in ascending order
+2 - local storage - only ID: Product (stringified JSON are saved in the DB).  
+          If we want to store other vars in local Storage, we'd just need to fix the addProduct function
+
++++ REFERENCES
+api/overview - http://backbonejs.org/
+model/collection/view overviews - http://backbonetutorials.com/
+general questions - stackoverflow
+router example - http://aaronhardy.com/javascript/javascript-architecture-backbone-js-routers/
+design ideas - codepen.io
+file structure - https://github.com/VIISON/BackboneSwitchView
+jquery reference - http://api.jquery.com/
+underscore reference - http://underscorejs.org/
+
+
+BUGS/IMMEDIATE TASKS...
 - BUG - local storage length doesn't account for deleted products  (need to sync local storage and collection IDs)
 - BUG - Uncaught TypeError: Object #<Object> has no method 'setElement'  - not sure where this is coming from
 - BUG - various errors in firefox..
@@ -12,7 +28,7 @@ Current fixes needed...
 - properly breakout index.html into templates, models, views, collections
 - log success/failure when adding/updating models
 
-Future fixes...
+FUTURE IMPROVEMENTS...
 - form validation
 - templatize the markup (mustache?)
 - SASS'ify CSS
