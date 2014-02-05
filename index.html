@@ -1,15 +1,4 @@
 <!doctype html>
-
-<!-- REFERENCES 
-api/overview - http://backbonejs.org/
-model/collection/view overviews - http://backbonetutorials.com/
-general questions - stackoverflow
-router example - http://aaronhardy.com/javascript/javascript-architecture-backbone-js-routers/
-design ideas - codepen.io
-file structure - https://github.com/VIISON/BackboneSwitchView
-jquery reference - http://api.jquery.com/
--->
-
 <link href='css/catalog.css' rel='stylesheet' type='text/css'>
 <link href='http://fonts.googleapis.com/css?family=Alegreya+Sans' rel='stylesheet' type='text/css'>
 <link href='http://fonts.googleapis.com/css?family=Forum' rel='stylesheet' type='text/css'>
@@ -17,9 +6,9 @@ jquery reference - http://api.jquery.com/
 <section>
 
 	<!-- Product List -->
-	<div id='catalog' class='hidden'>
+	<section id='catalog' class='hidden'>
 		<header>Product Catalog</header>
-		<div id="products-list">
+		<ul id="products-list">
       <!-- empty product list to start -->
 
       <!-- *** create one default node for testing/demo purposes -->
@@ -33,9 +22,9 @@ jquery reference - http://api.jquery.com/
         <img id='edit-1' class='icon edit-icon' src="images/edit.png">
         <img id='delete-1' class='icon delete-icon' src="images/delete2.png">
       </div>-->      
-		</div>
+		</ul>
 		<a id="add_product_form" class='button' href='#product'>Add Product</a>
-	</div>
+	</section>
 	
 	<!-- Add Product Form -->
 	<div id='product' class='hidden'>
@@ -77,12 +66,12 @@ Should investigate upgrading to one of the latest backbone/underscore lib versio
 <script type="text/javascript">
 (function ($) {
   //localStorage.clear();   // debug
-	var product_elements = new Array("id", "name", "value", "description", "height", "width", "length", "weight");
+	
+  var product_elements = new Array("id", "name", "value", "description", "height", "width", "length", "weight");
 
   var AppRouter = Backbone.Controller.extend({  // note: Controller needs to update to Router (w/1.0.0+ version of backbone)
     currentView: "",
 
-    // unused at the moment
     //initialize: function(el) {},
 
     routes: {
@@ -97,7 +86,6 @@ Should investigate upgrading to one of the latest backbone/underscore lib versio
       if(this.currentView) {
         $("#" + this.currentView).addClass('hidden');
       }
-      console.log("#" + view);
       $("#" + view).removeClass('hidden'); 
       this.currentView = view;    
     },
@@ -140,6 +128,8 @@ Should investigate upgrading to one of the latest backbone/underscore lib versio
   });
   
   CatalogView = Backbone.View.extend({
+    
+
     el: $("body section"),
     
     // when creating the view, retrieve any existing products from local storage
@@ -166,7 +156,6 @@ Should investigate upgrading to one of the latest backbone/underscore lib versio
 
     // show the 'add product' form
     addProductForm: function () {
-    	console.log("addProductForm");
       this.clearForm();
       $('.product_form header').text('Add Product to Catalog');
       $('#add_new_product').removeClass('hidden');
@@ -176,7 +165,6 @@ Should investigate upgrading to one of the latest backbone/underscore lib versio
 
     // show the 'edit product' form
     editProductForm: function () {
-    	console.log("editProductForm");
       this.clearForm();
       // get the id from the event 
   		var splitStr = event.target.id.split("-");
@@ -188,30 +176,29 @@ Should investigate upgrading to one of the latest backbone/underscore lib versio
       $('#prod_id').val(productID);
 
       // get the entry from local storage and parse a product
-      var localStorageKey = this.findLocalStorageKey(productID);
-      var lsString = localStorage.getItem(localStorageKey);
-      product = new Product(JSON.parse(localStorage.getItem(localStorageKey)));
+      //var localStorageKey = this.findLocalStorageKey(productID);
+      //var lsString = localStorage.getItem(localStorageKey);
+      product = new Product(JSON.parse(localStorage.getItem(productID)));
 
       // set form values for the product
-      $("#product #name").val(product.get("name")),
-      $("#product #description").val(product.get("description")),
-      $("#product #height").val(product.get("height")),
-      $("#product #width").val(product.get("width")),
-      $("#product #length").val(product.get("length")),
-      $("#product #weight").val(product.get("weight")),
-      $("#product #value").val(product.get("value")),      
-
-  		console.log("productID = " + productID);
+      $("#product #name").val(product.get("name"));
+      $("#product #description").val(product.get("description"));
+      $("#product #height").val(product.get("height"));
+      $("#product #width").val(product.get("width"));
+      $("#product #length").val(product.get("length"));
+      $("#product #weight").val(product.get("weight"));
+      $("#product #value").val(product.get("value"));    
     },
 
     // add a new product to the collection
     addProduct: function () {
-
-      var product_counter = 1 + localStorage.length;
+      // find ID of the last product in the catalog (or set to zero if it is empty)
+      var last_product_key = localStorage.length ? localStorage.key(localStorage.length - 1) : 0; 
+      var next_product_ID = 1 + parseInt(last_product_key);
 
       // grab the product's details from the form
       var product_details = {
-        id: product_counter,
+        id: next_product_ID,
       	name: $("#product #name").attr('value'),
       	description: $("#product #description").attr('value'),
       	height: $("#product #height").attr('value'),
@@ -223,14 +210,14 @@ Should investigate upgrading to one of the latest backbone/underscore lib versio
 
       // add the new product
       var product_model = new Product(product_details);
-      localStorage.setItem(product_counter, JSON.stringify(product_details));
+      localStorage.setItem(next_product_ID, JSON.stringify(product_details));
       this.products.add( product_model ); 
     },
 
     // edit an existing prodcut
     editProduct: function () {     
 
-      var productID = $('#prod_id').val();
+      var productID = parseInt($('#prod_id').val());  // note: parsing int so this doesn't convert to string on edit
 
       // grab the product's details from the form
       // TODO: create a reusable function for this (to merge with add)
@@ -246,8 +233,9 @@ Should investigate upgrading to one of the latest backbone/underscore lib versio
       };      
 
       // set the new values in local storage
-      var localStorageKey = this.findLocalStorageKey(productID);
-      localStorage.setItem(localStorageKey, JSON.stringify(product_details));
+      localStorage.setItem(productID, JSON.stringify(product_details));
+      
+      // add new product
       var product = this.products.get(productID);
       product.set(product_details);
     }, 
@@ -267,8 +255,7 @@ Should investigate upgrading to one of the latest backbone/underscore lib versio
         productToDelete.destroy();
 
         // delete from local storage 
-        var localStorageKey = this.findLocalStorageKey(productID);
-        localStorage.removeItem(key);
+        localStorage.removeItem(productID);
       }
     },
 
@@ -278,13 +265,13 @@ Should investigate upgrading to one of the latest backbone/underscore lib versio
     	var product_counter = model.id;
 
       // Generate the markup for a product node
-      var product_markup = "<div id='prod-" + product_counter + "' class='product_node'>";
+      var product_markup = "<li id='prod-" + product_counter + "' class='product_node'>";
       
       // Iterate through each of the product's elements and create a simple span for each
       for(var x in product_elements) {
       	product_markup += "<span class='prod_element " + product_elements[x] + "'>" + model.get(product_elements[x]) + "</span>";
       }
-      product_markup += "<a href='#product/" + product_counter + "'><img id='edit-" + product_counter + "' class='icon edit-icon' src='images/edit.png' /></a><img id='delete-" + product_counter + "'class='icon delete-icon' src='images/delete2.png' /></div>";
+      product_markup += "<a href='#product/" + product_counter + "'><img id='edit-" + product_counter + "' class='icon edit-icon' src='images/edit.png' /></a><img id='delete-" + product_counter + "'class='icon delete-icon' src='images/delete2.png' /></li>";
 
       // append the product node to the list 
       $("#products-list").append(product_markup);
@@ -297,13 +284,13 @@ Should investigate upgrading to one of the latest backbone/underscore lib versio
 
       // Generate the markup for a product node
       // TODO: this node creation should be extracted to a reusable function for add and edit
-      var product_markup = "<div id='prod-" + product_counter + "' class='product_node'>";
+      var product_markup = "<li id='prod-" + product_counter + "' class='product_node'>";
       
       // Iterate through each of the product's elements and create a simple span for each
       for(var x in product_elements) {
         product_markup += "<span class='prod_element " + product_elements[x] + "'>" + model.get(product_elements[x]) + "</span>";
       }
-      product_markup += "<a href='#product/" + product_counter + "'><img id='edit-" + product_counter + "' class='icon edit-icon' src='images/edit.png' /></a><img id='delete-" + product_counter + "'class='icon delete-icon' src='images/delete2.png' /></div>";
+      product_markup += "<a href='#product/" + product_counter + "'><img id='edit-" + product_counter + "' class='icon edit-icon' src='images/edit.png' /></a><img id='delete-" + product_counter + "'class='icon delete-icon' src='images/delete2.png' /></li>";
 
       // relace the node's data
       $("#products-list #prod-" + product_counter).replaceWith(product_markup);
@@ -320,24 +307,6 @@ Should investigate upgrading to one of the latest backbone/underscore lib versio
       for(var x in product_elements) {
         $("#product #" + product_elements[x]).val('');
       }
-    },
-
-    // find the correct key in local storage for a product ID
-    findLocalStorageKey: function (productID) {
-      // iterate through each entry and find the right ID 
-      // (this has to be horribly inefficient to iterate through everything, needs to be refactored)
-      for (var key in localStorage) {
-        val = localStorage.getItem(key); 
-
-        product = new Product(JSON.parse(val));
-        console.log(product.id + " :: " + key + " :: " + productID);
-        if(product.id == productID) {
-          return key;
-        }
-      }
-      // return null if no key was found
-      console.log("ERROR: the product was not found in the database");
-      return null;
     },
 
     // generate the markup for a new or edited product node 
