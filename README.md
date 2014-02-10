@@ -3,6 +3,10 @@ product_catalog2
 
 First version of product catalog posted.  
 
+<< LIVE INSTANCE >>
+
+http://terryosterdock.com/projects/product_catalog/
+
 << ASSUMPTIONS  >>
 
 1 - local storage - keys are always stored in ascending order
